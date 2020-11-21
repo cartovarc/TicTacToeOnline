@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
+        integrity="sha512-v8ng/uGxkge3d1IJuEo6dJP8JViyvms0cly9pnbfRxT6/31c3dRWxIiwGnMSWwZjHKOuY3EVmijs7k1jz/9bLA=="
+        crossorigin="anonymous"></script>
+
+    <style>
+        /* UNIVERSAL STYLES */
+        .center {
+            margin-right: auto;
+            margin-left: auto;
+        }
+
+        .italic {
+            font-style: italic;
+            text-decoration: underline;
+        }
+
+        /* ELEMENT STYLES */
+        h1,
+        h4 {
+            text-align: center;
+            font-family: sans-serif;
+            color: #666666;
+            border: 0;
+        }
+
+        p {
+            text-align: center;
+            font-family: sans-serif;
+            line-height: 16pt;
+            color: #666666;
+        }
+
+        .button {
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        #restart {
+            font-size: 12pt;
+            color: #666666;
+            background-color: #dedede;
+            padding: 5px 15px 5px 15px;
+        }
+
+        /* BOARD STYLES */
+        #board-outer {
+            height: 350px;
+            width: 350px;
+            background-color: none;
+            overflow: hidden;
+        }
+
+        #board {
+            width: 354px;
+            height: 354px;
+            background-color: none;
+            border-spacing: 0;
+            margin-left: -2px;
+            margin-top: -2px;
+        }
+
+        td {
+            height: 116px;
+            width: 116px;
+            text-align: center;
+            font-family: sans-serif;
+            font-size: 40pt;
+            border-collapse: collapse;
+            border: 2px solid #B9E9F0;
+            text-transform: uppercase;
+            color: #999999;
+        }
+
+        .x {
+            width: 100%;
+            height: 100%;
+            background-color: blue;
+        }
+
+        .o {
+            width: 100%;
+            height: 100%;
+            background-color: red;
+        }
+    </style>
+</head>
+
+<!DOCTYPE html>
+
+<body>
+    <div id="mensaje_turno">
+        <h1>ES TU TURNO</h1>
+    </div>
+    <div id="mensaje_esperando">
+        <h1>ESPERANDO JUGADOR</h1>
+    </div>
+    <div id="board-outer" class="center">
+        <table id="board">
+            <tr class="row">
+                <td class="casilla" id="a1"></td>
+                <td class="casilla" id="a2"></td>
+                <td class="casilla" id="a3"></td>
+            </tr>
+            <tr class="row">
+                <td class="casilla" id="b1"></td>
+                <td class="casilla" id="b2"></td>
+                <td class="casilla" id="b3"></td>
+            </tr>
+            <tr class="row">
+                <td class="casilla" id="c1"></td>
+                <td class="casilla" id="c2"></td>
+                <td class="casilla" id="c3"></td>
+            </tr>
+        </table>
+
+    </div>
+</body>
+
+<script>
+    var a1, a2, a3, b1, b2, b3, c1, c2, c3;
+    var jugador = null; // X, O
+    var socket = null;
+    var id_sala = "1234";
+
+    procesarJugada = function (id) {
+        let data = {"jugada": id, "jugador": jugador, "id_sala": id_sala};
+        socket.emit("jugada", data);
+    }
+
+    // Iniciar el juego
+    $(document).ready(function () {
+        $( "#mensaje_turno" ).hide(); 
+        $( "#mensaje_esperando" ).hide(); 
+
+        $(".casilla").click(function (event) {
+            procesarJugada(event.currentTarget.id);
+        });
+
+        socket = io();
+        socket.on("connect", () => {
+            console.log("Se conectó con el servidor");
+            socket.emit("entrar_a_sala", id_sala);
+        });
+
+        socket.on("asiginacion_jugador", (jugador_asignado) => {
+            jugador = jugador_asignado;
+            if(jugador === "X") {
+                $( "#mensaje_turno" ).show(); 
+                $( "#mensaje_esperando" ).hide(); 
+            }else{
+                $( "#mensaje_turno" ).hide(); 
+                $( "#mensaje_esperando" ).show(); 
+            }
+            console.log("Se asigna el jugador " + jugador_asignado);
+        });
+
+        socket.on("mostrar_letra", (data) => {
+
+            let id_casilla = data["id_casilla"];
+            let letra = data["letra"];
+            $("#" + id_casilla).html(letra);
+
+            if(letra === jugador) {
+                $( "#mensaje_turno" ).hide(); 
+                $( "#mensaje_esperando" ).show(); 
+            }else{
+                $( "#mensaje_turno" ).show(); 
+                $( "#mensaje_esperando" ).hide(); 
+            }
+        });
+
+    });
+
+    revisarTablero = function () {
+        a1 = $('#a1').html();
+        a2 = $('#a2').html();
+        a3 = $('#a3').html();
+        b1 = $('#b1').html();
+        b2 = $('#b2').html();
+        b3 = $('#b3').html();
+        c1 = $('#c1').html();
+        c2 = $('#c2').html();
+        c3 = $('#c3').html();
+    };
+
+    limpiarTablero = function () {
+        a1 = $('#a1').text("");
+        b1 = $('#b1').text("");
+        c1 = $('#c1').text("");
+        a2 = $('#a2').text("");
+        b2 = $('#b2').text("");
+        c2 = $('#c2').text("");
+        a3 = $('#a3').text("");
+        b3 = $('#b3').text("");
+        c3 = $('#c3').text("");
+    }
+
+
+</script>
+
+</html>

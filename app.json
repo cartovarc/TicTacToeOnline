@@ -1,0 +1,5 @@
+{
+  "name": "Practica Javascript para hacer un Tic Tac Toe online",
+  "description": "Crearemos un Tic Tac Toe online",
+  "keywords": ["node", "socket.io", "express"]
+}
